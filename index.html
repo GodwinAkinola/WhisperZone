@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GprinceDev RealTalk — Say It Anonymously</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+  <style>
+    /* =============================================
+       ROOT VARIABLES
+    ============================================= */
+    :root {
+      --bg:        #07070f;
+      --bg-card:   #0e0e1a;
+      --bg-hover:  #131325;
+      --bg-compose:#0c0c1c;
+      --bg-input:  #090915;
+      --border:    rgba(255,255,255,.08);
+      --border-hi: #a78bfa;
+      --text:      #f0eeff;
+      --text-2:    #9d9bba;
+      --text-3:    #4e4b6a;
+      --r: 10px; --rl: 22px;
+      --t: .22s cubic-bezier(.4,0,.2,1);
+      --fd: 'Syne', sans-serif;
+      --fb: 'DM Sans', sans-serif;
+
+      /* category gradient pairs: from / to */
+      --g-happy:      linear-gradient(135deg,#f9d423,#ff4e50);
+      --g-sad:        linear-gradient(135deg,#4facfe,#00f2fe);
+      --g-angry:      linear-gradient(135deg,#f5515f,#9f041b);
+      --g-love:       linear-gradient(135deg,#f953c6,#b91d73);
+      --g-naughty:    linear-gradient(135deg,#a18cd1,#fbc2eb);
+      --g-confession: linear-gradient(135deg,#f7971e,#ffd200);
+      --g-rant:       linear-gradient(135deg,#e52d27,#b31217);
+      --g-advice:     linear-gradient(135deg,#11998e,#38ef7d);
+      --g-gratitude:  linear-gradient(135deg,#00b4d8,#90e0ef);
+      --g-random:     linear-gradient(135deg,#7f7fd5,#86a8e7,#91eae4);
+
+      /* solid versions for text/tags */
+      --c-happy:      #ffd166;
+      --c-sad:        #4facfe;
+      --c-angry:      #ff6b6b;
+      --c-love:       #f953c6;
+      --c-naughty:    #c084fc;
+      --c-confession: #fb923c;
+      --c-rant:       #f87171;
+      --c-advice:     #34d399;
+      --c-gratitude:  #22d3ee;
+      --c-random:     #a5b4fc;
+    }
+
+    /* =============================================
+       BASE
+    ============================================= */
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{
+      background:var(--bg);
+      color:var(--text);
+      font-family:var(--fb);
+      font-size:15px;
+      line-height:1.6;
+      min-height:100vh;
+      overflow-x:hidden;
+    }
+    /* rainbow scrollbar */
+    ::-webkit-scrollbar{width:5px}
+    ::-webkit-scrollbar-track{background:var(--bg)}
+    ::-webkit-scrollbar-thumb{background:linear-gradient(#f953c6,#4facfe,#38ef7d);border-radius:3px}
+    .container{max-width:720px;margin:0 auto;padding:0 18px}
+
+    /* =============================================
+       AURORA BACKGROUND
+    ============================================= */
+    body::before{
+      content:'';
+      position:fixed;inset:0;z-index:0;pointer-events:none;
+      background:
+        radial-gradient(ellipse 60% 40% at 20% 10%, rgba(168,85,247,.18) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 35% at 80% 5%,  rgba(79,172,254,.15) 0%, transparent 55%),
+        radial-gradient(ellipse 55% 30% at 50% 90%, rgba(249,83,198,.12) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 25% at 90% 60%, rgba(56,239,125,.1)  0%, transparent 50%);
+      animation:aurora 12s ease-in-out infinite alternate;
+    }
+    @keyframes aurora{
+      0%  {transform:scale(1) rotate(0deg)}
+      50% {transform:scale(1.05) rotate(1deg)}
+      100%{transform:scale(1) rotate(-1deg)}
+    }
+
+    /* =============================================
+       HEADER
+    ============================================= */
+    .site-header{
+      position:sticky;top:0;z-index:200;
+      padding:0;
+      background:rgba(7,7,15,.75);
+      backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+    /* Rainbow top border */
+    .site-header::before{
+      content:'';display:block;height:3px;
+      background:linear-gradient(90deg,#f953c6,#a78bfa,#4facfe,#38ef7d,#ffd166,#f953c6);
+      background-size:200% 100%;
+      animation:rainbowSlide 4s linear infinite;
+    }
+    @keyframes rainbowSlide{0%{background-position:0%}100%{background-position:200%}}
+    .site-header .container{display:flex;align-items:center;justify-content:space-between;padding-top:12px;padding-bottom:12px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .brand-logo{
+      width:34px;height:34px;border-radius:10px;
+      background:linear-gradient(135deg,#f953c6,#a78bfa,#4facfe);
+      display:flex;align-items:center;justify-content:center;
+      font-size:1.1rem;box-shadow:0 0 20px rgba(167,139,250,.4);
+    }
+    .brand-name{
+      font-family:var(--fd);font-size:1.35rem;font-weight:800;letter-spacing:-.03em;
+      background:linear-gradient(135deg,#f0eeff,#a78bfa);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    }
+    .brand-sub{
+      font-size:.65rem;color:var(--text-3);letter-spacing:.09em;text-transform:uppercase;
+      padding:3px 9px;border:1px solid rgba(255,255,255,.08);border-radius:20px;
+    }
+    @media(max-width:440px){.brand-sub{display:none}}
+    .live-pill{
+      display:flex;align-items:center;gap:7px;
+      font-size:.68rem;color:var(--text-2);letter-spacing:.06em;text-transform:uppercase;
+      background:rgba(56,239,125,.06);border:1px solid rgba(56,239,125,.15);
+      padding:5px 12px;border-radius:20px;
+    }
+    .pulse-dot{width:7px;height:7px;border-radius:50%;background:#38ef7d;box-shadow:0 0 10px #38ef7d;animation:pulse 2s ease-in-out infinite}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.75)}}
+
+    /* =============================================
+       MAIN
+    ============================================= */
+    main{padding-top:28px;padding-bottom:80px;position:relative;z-index:1}
+
+    /* =============================================
+       DAILY PROMPT
+    ============================================= */
+    .daily-prompt{
+      margin-bottom:26px;padding:20px 24px;
+      background:linear-gradient(135deg,rgba(167,139,250,.12),rgba(79,172,254,.08));
+      border:1px solid rgba(167,139,250,.25);
+      border-radius:var(--rl);position:relative;overflow:hidden;
+    }
+    .daily-prompt::before{
+      content:'';position:absolute;inset:0;
+      background:linear-gradient(135deg,rgba(167,139,250,.05),transparent);
+      pointer-events:none;
+    }
+    .daily-prompt::after{
+      content:'✦';position:absolute;right:20px;top:12px;
+      font-size:4rem;color:#a78bfa;opacity:.12;pointer-events:none;line-height:1;
+    }
+    .prompt-eye{
+      font-size:.63rem;font-family:var(--fd);font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+      background:linear-gradient(90deg,#a78bfa,#4facfe);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+      margin-bottom:7px;display:inline-block;
+    }
+    .prompt-q{font-size:1.04rem;font-weight:500;color:var(--text);line-height:1.5}
+
+    /* =============================================
+       COMPOSE CARD
+    ============================================= */
+    .compose-wrap{margin-bottom:32px}
+    .compose-card{
+      background:var(--bg-compose);
+      border:1px solid rgba(255,255,255,.07);
+      border-radius:var(--rl);overflow:hidden;
+      transition:border-color var(--t),box-shadow var(--t);
+      position:relative;
+    }
+    .compose-card::before{
+      content:'';position:absolute;inset:0;border-radius:var(--rl);
+      background:linear-gradient(135deg,rgba(249,83,198,.04),rgba(79,172,254,.04),rgba(56,239,125,.03));
+      pointer-events:none;
+    }
+    .compose-card:focus-within{
+      border-color:rgba(167,139,250,.5);
+      box-shadow:0 0 0 3px rgba(167,139,250,.12),0 8px 40px rgba(167,139,250,.1);
+    }
+    .compose-textarea{
+      width:100%;min-height:112px;padding:20px 22px 12px;
+      background:transparent;border:none;outline:none;
+      color:var(--text);font-family:var(--fb);font-size:.97rem;line-height:1.7;
+      resize:none;caret-color:#a78bfa;position:relative;z-index:1;
+    }
+    .compose-textarea::placeholder{color:var(--text-3);font-style:italic;font-weight:300}
+
+    /* ── NAME ROW ── */
+    .name-row{
+      display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+      padding:10px 18px 12px;
+      border-top:1px solid rgba(255,255,255,.06);
+      position:relative;z-index:1;
+    }
+    .name-row-label{
+      font-size:.63rem;font-family:var(--fd);font-weight:700;letter-spacing:.13em;text-transform:uppercase;
+      color:var(--text-3);white-space:nowrap;flex-shrink:0;
+    }
+    .name-input-wrap{
+      display:flex;align-items:center;gap:8px;flex:1;min-width:170px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);border-radius:20px;
+      padding:6px 8px 6px 14px;
+      transition:border-color var(--t),box-shadow var(--t);
+    }
+    .name-input-wrap:focus-within{
+      border-color:rgba(167,139,250,.5);
+      box-shadow:0 0 0 2px rgba(167,139,250,.12);
+    }
+    .name-icon{font-size:.85rem;opacity:.5;flex-shrink:0}
+    .name-input{
+      flex:1;background:transparent;border:none;outline:none;
+      color:var(--text);font-family:var(--fb);font-size:.85rem;
+      caret-color:#a78bfa;min-width:0;
+    }
+    .name-input::placeholder{color:var(--text-3);font-style:italic}
+    .btn-generate{
+      display:flex;align-items:center;gap:5px;padding:6px 13px;
+      background:linear-gradient(135deg,rgba(167,139,250,.15),rgba(79,172,254,.1));
+      border:1px solid rgba(167,139,250,.2);border-radius:20px;
+      color:#a78bfa;font-family:var(--fb);font-size:.74rem;
+      cursor:pointer;transition:all var(--t);white-space:nowrap;flex-shrink:0;
+    }
+    .btn-generate:hover{background:linear-gradient(135deg,rgba(167,139,250,.28),rgba(79,172,254,.2));box-shadow:0 0 16px rgba(167,139,250,.2)}
+    .name-save-note{width:100%;font-size:.66rem;color:var(--text-3);font-style:italic;padding:0 2px;display:flex;align-items:center;gap:5px}
+    .name-saved-badge{
+      display:inline-flex;align-items:center;gap:4px;
+      background:rgba(56,239,125,.12);color:#38ef7d;
+      border-radius:10px;padding:1px 8px;font-size:.64rem;font-style:normal;
+      opacity:0;transition:opacity .3s;
+    }
+    .name-saved-badge.show{opacity:1}
+
+    /* ── CATEGORY PICKER ── */
+    .cat-picker{
+      padding:10px 18px 13px;border-top:1px solid rgba(255,255,255,.06);
+      display:flex;flex-direction:column;gap:10px;position:relative;z-index:1;
+    }
+    .cat-label-row{display:flex;align-items:center;justify-content:space-between}
+    .cat-label{font-size:.63rem;font-family:var(--fd);font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--text-3)}
+    .cat-pills{display:flex;flex-wrap:wrap;gap:7px}
+    .cat-pill{
+      display:inline-flex;align-items:center;gap:5px;
+      padding:6px 14px;border-radius:20px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.03);
+      color:var(--text-2);font-family:var(--fb);font-size:.8rem;
+      cursor:pointer;user-select:none;
+      transition:all var(--t);
+    }
+    .cat-pill:hover{border-color:rgba(255,255,255,.18);color:var(--text);background:rgba(255,255,255,.07);transform:translateY(-1px)}
+    .cat-pill.selected{color:#07070f;font-weight:700;border-color:transparent;box-shadow:0 4px 18px rgba(0,0,0,.3)}
+    .cat-pill[data-cat="happy"].selected    {background:var(--g-happy)}
+    .cat-pill[data-cat="sad"].selected      {background:var(--g-sad)}
+    .cat-pill[data-cat="angry"].selected    {background:var(--g-angry)}
+    .cat-pill[data-cat="love"].selected     {background:var(--g-love)}
+    .cat-pill[data-cat="naughty"].selected  {background:var(--g-naughty);color:#07070f}
+    .cat-pill[data-cat="confession"].selected{background:var(--g-confession)}
+    .cat-pill[data-cat="rant"].selected     {background:var(--g-rant)}
+    .cat-pill[data-cat="advice"].selected   {background:var(--g-advice)}
+    .cat-pill[data-cat="gratitude"].selected{background:var(--g-gratitude)}
+    .cat-pill[data-cat="random"].selected   {background:var(--g-random)}
+
+    /* ── COMPOSE BAR ── */
+    .compose-bar{
+      display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+      padding:10px 18px 15px;border-top:1px solid rgba(255,255,255,.06);position:relative;z-index:1;
+    }
+    .char-count{font-size:.72rem;color:var(--text-3);font-variant-numeric:tabular-nums;transition:color var(--t)}
+    .char-count.warn{color:#ffd166}
+    .char-count.danger{color:#ff6b6b}
+    .btn-post{
+      display:flex;align-items:center;gap:8px;padding:10px 26px;
+      background:linear-gradient(135deg,#f953c6,#a78bfa,#4facfe);
+      background-size:200% 100%;
+      color:#fff;border:none;border-radius:var(--r);
+      font-family:var(--fd);font-size:.88rem;font-weight:700;letter-spacing:.03em;
+      cursor:pointer;
+      transition:background-position .4s,transform var(--t),box-shadow var(--t);
+      box-shadow:0 4px 20px rgba(167,139,250,.35);
+    }
+    .btn-post:hover{background-position:100% 0;transform:translateY(-2px);box-shadow:0 8px 30px rgba(167,139,250,.5)}
+    .btn-post:active{transform:none;box-shadow:0 2px 10px rgba(167,139,250,.3)}
+    .btn-post:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none}
+    @media(max-width:480px){.compose-bar{flex-direction:column;align-items:flex-start}.btn-post{width:100%;justify-content:center}}
+
+    /* =============================================
+       FILTER BAR
+    ============================================= */
+    .filter-section{margin-bottom:24px}
+    .filter-title{font-size:.62rem;font-family:var(--fd);font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text-3);margin-bottom:10px}
+    .filter-bar{display:flex;gap:7px;flex-wrap:wrap}
+    .filter-pill{
+      display:inline-flex;align-items:center;gap:5px;
+      padding:6px 14px;border-radius:20px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.03);
+      color:var(--text-3);font-family:var(--fb);font-size:.78rem;
+      cursor:pointer;user-select:none;transition:all var(--t);
+    }
+    .filter-pill:hover{color:var(--text-2);border-color:rgba(255,255,255,.16);background:rgba(255,255,255,.06)}
+    .filter-pill.active{color:#07070f;font-weight:700;border-color:transparent;box-shadow:0 3px 14px rgba(0,0,0,.25)}
+    .filter-pill[data-filter="all"].active    {background:linear-gradient(135deg,#f953c6,#a78bfa,#4facfe);box-shadow:0 4px 18px rgba(167,139,250,.35)}
+    .filter-pill[data-filter="happy"].active  {background:var(--g-happy)}
+    .filter-pill[data-filter="sad"].active    {background:var(--g-sad)}
+    .filter-pill[data-filter="angry"].active  {background:var(--g-angry)}
+    .filter-pill[data-filter="love"].active   {background:var(--g-love)}
+    .filter-pill[data-filter="naughty"].active{background:var(--g-naughty)}
+    .filter-pill[data-filter="confession"].active{background:var(--g-confession)}
+    .filter-pill[data-filter="rant"].active   {background:var(--g-rant)}
+    .filter-pill[data-filter="advice"].active {background:var(--g-advice)}
+    .filter-pill[data-filter="gratitude"].active{background:var(--g-gratitude)}
+    .filter-pill[data-filter="random"].active {background:var(--g-random)}
+
+    /* =============================================
+       FEED HEADER
+    ============================================= */
+    .feed-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    .feed-label{
+      font-family:var(--fd);font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+      background:linear-gradient(90deg,#a78bfa,#4facfe);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    }
+    .sort-group{display:flex;gap:3px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:var(--r);padding:3px}
+    .sort-btn{background:transparent;border:none;color:var(--text-3);font-family:var(--fb);font-size:.76rem;padding:5px 14px;border-radius:7px;cursor:pointer;transition:all var(--t)}
+    .sort-btn.active{background:linear-gradient(135deg,rgba(167,139,250,.25),rgba(79,172,254,.15));color:var(--text);box-shadow:0 1px 6px rgba(0,0,0,.3)}
+    .sort-btn:hover:not(.active){color:var(--text-2)}
+
+    /* =============================================
+       FEED
+    ============================================= */
+    .feed{display:flex;flex-direction:column;gap:14px}
+    .empty-state{text-align:center;padding:64px 20px;color:var(--text-3)}
+    .empty-state.hidden{display:none}
+    .empty-icon{font-size:3rem;margin-bottom:14px;opacity:.4}
+    .empty-state p{font-size:.94rem;font-style:italic}
+
+    /* =============================================
+       POST CARD
+    ============================================= */
+    .post-card{
+      background:var(--bg-card);
+      border:1px solid rgba(255,255,255,.07);
+      border-radius:var(--rl);
+      padding:20px 22px 15px;
+      position:relative;overflow:hidden;
+      animation:cardIn .38s cubic-bezier(.22,1,.36,1) both;
+      transition:transform .26s cubic-bezier(.4,0,.2,1),box-shadow .26s,border-color var(--t);
+    }
+    @keyframes cardIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+    /* Glowing gradient top border per category */
+    .post-card::before{
+      content:'';position:absolute;top:0;left:0;right:0;height:2px;
+    }
+    .post-card[data-cat="happy"]::before      {background:var(--g-happy)}
+    .post-card[data-cat="sad"]::before        {background:var(--g-sad)}
+    .post-card[data-cat="angry"]::before      {background:var(--g-angry)}
+    .post-card[data-cat="love"]::before       {background:var(--g-love)}
+    .post-card[data-cat="naughty"]::before    {background:var(--g-naughty)}
+    .post-card[data-cat="confession"]::before {background:var(--g-confession)}
+    .post-card[data-cat="rant"]::before       {background:var(--g-rant)}
+    .post-card[data-cat="advice"]::before     {background:var(--g-advice)}
+    .post-card[data-cat="gratitude"]::before  {background:var(--g-gratitude)}
+    .post-card[data-cat="random"]::before     {background:var(--g-random)}
+
+    /* Subtle glow bg tint per card */
+    .post-card::after{
+      content:'';position:absolute;inset:0;border-radius:var(--rl);opacity:0;
+      transition:opacity .3s;pointer-events:none;
+    }
+    .post-card[data-cat="happy"]::after      {background:radial-gradient(ellipse at top left,rgba(249,212,35,.06),transparent 60%)}
+    .post-card[data-cat="sad"]::after        {background:radial-gradient(ellipse at top left,rgba(79,172,254,.06),transparent 60%)}
+    .post-card[data-cat="angry"]::after      {background:radial-gradient(ellipse at top left,rgba(245,81,95,.07),transparent 60%)}
+    .post-card[data-cat="love"]::after       {background:radial-gradient(ellipse at top left,rgba(249,83,198,.07),transparent 60%)}
+    .post-card[data-cat="naughty"]::after    {background:radial-gradient(ellipse at top left,rgba(192,132,252,.06),transparent 60%)}
+    .post-card[data-cat="confession"]::after {background:radial-gradient(ellipse at top left,rgba(251,146,60,.06),transparent 60%)}
+    .post-card[data-cat="rant"]::after       {background:radial-gradient(ellipse at top left,rgba(248,113,113,.07),transparent 60%)}
+    .post-card[data-cat="advice"]::after     {background:radial-gradient(ellipse at top left,rgba(52,211,153,.06),transparent 60%)}
+    .post-card[data-cat="gratitude"]::after  {background:radial-gradient(ellipse at top left,rgba(34,211,238,.06),transparent 60%)}
+    .post-card[data-cat="random"]::after     {background:radial-gradient(ellipse at top left,rgba(165,180,252,.06),transparent 60%)}
+
+    .post-card:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.14)}
+    .post-card:hover::after{opacity:1}
+    .post-card[data-cat="happy"]:hover  {box-shadow:0 8px 40px rgba(249,212,35,.12)}
+    .post-card[data-cat="sad"]:hover    {box-shadow:0 8px 40px rgba(79,172,254,.12)}
+    .post-card[data-cat="angry"]:hover  {box-shadow:0 8px 40px rgba(245,81,95,.12)}
+    .post-card[data-cat="love"]:hover   {box-shadow:0 8px 40px rgba(249,83,198,.14)}
+    .post-card[data-cat="naughty"]:hover{box-shadow:0 8px 40px rgba(192,132,252,.13)}
+    .post-card[data-cat="confession"]:hover{box-shadow:0 8px 40px rgba(251,146,60,.11)}
+    .post-card[data-cat="rant"]:hover   {box-shadow:0 8px 40px rgba(248,113,113,.13)}
+    .post-card[data-cat="advice"]:hover {box-shadow:0 8px 40px rgba(52,211,153,.12)}
+    .post-card[data-cat="gratitude"]:hover{box-shadow:0 8px 40px rgba(34,211,238,.12)}
+    .post-card[data-cat="random"]:hover {box-shadow:0 8px 40px rgba(165,180,252,.12)}
+
+    /* Card top */
+    .card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:7px;position:relative;z-index:1}
+    .card-meta{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+
+    /* Avatar with gradient */
+    .avatar{
+      width:30px;height:30px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font-size:.6rem;font-weight:800;color:#fff;flex-shrink:0;
+      text-shadow:0 1px 3px rgba(0,0,0,.4);
+    }
+    .avatar[data-cat="happy"]      {background:var(--g-happy)}
+    .avatar[data-cat="sad"]        {background:var(--g-sad)}
+    .avatar[data-cat="angry"]      {background:var(--g-angry)}
+    .avatar[data-cat="love"]       {background:var(--g-love)}
+    .avatar[data-cat="naughty"]    {background:var(--g-naughty)}
+    .avatar[data-cat="confession"] {background:var(--g-confession)}
+    .avatar[data-cat="rant"]       {background:var(--g-rant)}
+    .avatar[data-cat="advice"]     {background:var(--g-advice)}
+    .avatar[data-cat="gratitude"]  {background:var(--g-gratitude)}
+    .avatar[data-cat="random"]     {background:var(--g-random)}
+
+    .card-alias{font-size:.82rem;font-weight:600;color:var(--text);letter-spacing:.01em}
+    .card-alias-anon{font-size:.8rem;font-weight:400;color:var(--text-3);font-style:italic}
+
+    /* Category tag with gradient */
+    .post-tag{
+      display:inline-flex;align-items:center;gap:4px;
+      font-size:.68rem;font-weight:700;letter-spacing:.02em;
+      padding:3px 10px;border-radius:20px;
+      border:1px solid rgba(255,255,255,.06);
+    }
+    .post-tag[data-cat="happy"]      {background:rgba(249,212,35,.12);color:var(--c-happy)}
+    .post-tag[data-cat="sad"]        {background:rgba(79,172,254,.12);color:var(--c-sad)}
+    .post-tag[data-cat="angry"]      {background:rgba(245,81,95,.12);color:var(--c-angry)}
+    .post-tag[data-cat="love"]       {background:rgba(249,83,198,.12);color:var(--c-love)}
+    .post-tag[data-cat="naughty"]    {background:rgba(192,132,252,.12);color:var(--c-naughty)}
+    .post-tag[data-cat="confession"] {background:rgba(251,146,60,.12);color:var(--c-confession)}
+    .post-tag[data-cat="rant"]       {background:rgba(248,113,113,.12);color:var(--c-rant)}
+    .post-tag[data-cat="advice"]     {background:rgba(52,211,153,.12);color:var(--c-advice)}
+    .post-tag[data-cat="gratitude"]  {background:rgba(34,211,238,.12);color:var(--c-gratitude)}
+    .post-tag[data-cat="random"]     {background:rgba(165,180,252,.12);color:var(--c-random)}
+
+    .card-time{font-size:.68rem;color:var(--text-3);font-variant-numeric:tabular-nums}
+    .card-body{font-size:.97rem;line-height:1.73;color:var(--text);word-break:break-word;margin-bottom:16px;position:relative;z-index:1}
+
+    /* Reactions */
+    .card-reactions{display:flex;gap:8px;flex-wrap:wrap;padding-top:13px;border-top:1px solid rgba(255,255,255,.06);position:relative;z-index:1}
+    .rxn-btn{
+      display:flex;align-items:center;gap:6px;padding:6px 15px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.07);border-radius:20px;
+      color:var(--text-3);font-family:var(--fb);font-size:.79rem;
+      cursor:pointer;user-select:none;transition:all var(--t);
+    }
+    .rxn-btn:hover{border-color:rgba(255,255,255,.16);color:var(--text-2);background:rgba(255,255,255,.08);transform:translateY(-1px)}
+    .rxn-btn.active-relate  {background:rgba(249,83,198,.15);color:#f953c6;border-color:rgba(249,83,198,.3);box-shadow:0 0 12px rgba(249,83,198,.15)}
+    .rxn-btn.active-support {background:rgba(79,172,254,.15);color:#4facfe;border-color:rgba(79,172,254,.3);box-shadow:0 0 12px rgba(79,172,254,.15)}
+    .rxn-btn.active-fire    {background:rgba(251,146,60,.15);color:#fb923c;border-color:rgba(251,146,60,.3);box-shadow:0 0 12px rgba(251,146,60,.15)}
+    .rxn-icon{font-size:1rem}
+    .rxn-count{font-variant-numeric:tabular-nums;font-weight:600;min-width:12px;text-align:center}
+    @keyframes bump{0%{transform:scale(1)}45%{transform:scale(1.4)}100%{transform:scale(1)}}
+    .bump{animation:bump .24s ease}
+
+    /* =============================================
+       TOAST
+    ============================================= */
+    .toast{
+      position:fixed;bottom:28px;left:50%;
+      transform:translateX(-50%) translateY(14px);
+      background:linear-gradient(135deg,rgba(167,139,250,.15),rgba(79,172,254,.1));
+      backdrop-filter:blur(16px);
+      border:1px solid rgba(167,139,250,.3);
+      color:var(--text);padding:10px 24px;
+      border-radius:20px;font-size:.84rem;
+      opacity:0;pointer-events:none;white-space:nowrap;
+      z-index:999;box-shadow:0 8px 32px rgba(0,0,0,.5);
+      transition:opacity .22s,transform .22s;
+    }
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+    /* =============================================
+       FOOTER
+    ============================================= */
+    .site-footer{
+      border-top:1px solid rgba(255,255,255,.05);
+      padding:20px 0;text-align:center;position:relative;z-index:1;
+    }
+    .site-footer p{font-size:.72rem;color:var(--text-3);letter-spacing:.04em}
+    .site-footer span{
+      background:linear-gradient(90deg,#f953c6,#a78bfa,#4facfe);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+      font-weight:700;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<header class="site-header">
+  <div class="container">
+    <div class="brand">
+      <div class="brand-logo">💬</div>
+      <h1 class="brand-name">WhisperZone</h1>
+      <span class="brand-sub">anonymous · unfiltered</span>
+    </div>
+    <div class="live-pill">
+      <span class="pulse-dot"></span>
+      live feed
+    </div>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- Daily Prompt -->
+  <section class="daily-prompt">
+    <div class="prompt-eye">✦ Today's Prompt</div>
+    <p class="prompt-q" id="promptText"></p>
+  </section>
+
+  <!-- Compose -->
+  <section class="compose-wrap">
+    <div class="compose-card">
+      <textarea id="postInput" class="compose-textarea" maxlength="300"
+        placeholder="Say it. No one knows it's you." aria-label="Write your anonymous post"></textarea>
+
+      <!-- Alias row -->
+      <div class="name-row">
+        <span class="name-row-label">Your alias</span>
+        <div class="name-input-wrap">
+          <span class="name-icon">👤</span>
+          <input type="text" id="nameInput" class="name-input" maxlength="30"
+            placeholder="e.g. SilentStorm, GhostWriter…"
+            autocomplete="off" spellcheck="false" aria-label="Anonymous display name"/>
+        </div>
+        <button class="btn-generate" id="btnGenName" title="Generate a random alias">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Random
+        </button>
+        <div class="name-save-note">
+          Saved automatically &nbsp;
+          <span class="name-saved-badge" id="nameSavedBadge">✓ saved</span>
+        </div>
+      </div>
+
+      <!-- Category picker -->
+      <div class="cat-picker">
+        <div class="cat-label-row">
+          <span class="cat-label">Pick a category</span>
+        </div>
+        <div class="cat-pills" id="catPills">
+          <button class="cat-pill selected" data-cat="happy">🎉 Happy</button>
+          <button class="cat-pill" data-cat="sad">😔 Sad</button>
+          <button class="cat-pill" data-cat="angry">😡 Angry</button>
+          <button class="cat-pill" data-cat="love">💖 Love</button>
+          <button class="cat-pill" data-cat="naughty">🔥 Naughty</button>
+          <button class="cat-pill" data-cat="confession">🤫 Confession</button>
+          <button class="cat-pill" data-cat="rant">💢 Rant</button>
+          <button class="cat-pill" data-cat="advice">💡 Advice</button>
+          <button class="cat-pill" data-cat="gratitude">🙏 Gratitude</button>
+          <button class="cat-pill" data-cat="random">🎲 Random</button>
+        </div>
+      </div>
+
+      <!-- Bottom bar -->
+      <div class="compose-bar">
+        <span class="char-count" id="charCount">0 / 300</span>
+        <button id="postBtn" class="btn-post">
+          Post anonymously
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Filter bar -->
+  <div class="filter-section">
+    <div class="filter-title">Browse by category</div>
+    <div class="filter-bar" id="filterBar">
+      <button class="filter-pill active" data-filter="all">✦ All</button>
+      <button class="filter-pill" data-filter="happy">🎉 Happy</button>
+      <button class="filter-pill" data-filter="sad">😔 Sad</button>
+      <button class="filter-pill" data-filter="angry">😡 Angry</button>
+      <button class="filter-pill" data-filter="love">💖 Love</button>
+      <button class="filter-pill" data-filter="naughty">🔥 Naughty</button>
+      <button class="filter-pill" data-filter="confession">🤫 Confession</button>
+      <button class="filter-pill" data-filter="rant">💢 Rant</button>
+      <button class="filter-pill" data-filter="advice">💡 Advice</button>
+      <button class="filter-pill" data-filter="gratitude">🙏 Gratitude</button>
+      <button class="filter-pill" data-filter="random">🎲 Random</button>
+    </div>
+  </div>
+
+  <!-- Feed -->
+  <div class="feed-hdr">
+    <span class="feed-label" id="feedLabel">Community Feed</span>
+    <div class="sort-group" role="group" aria-label="Sort posts">
+      <button class="sort-btn active" data-sort="newest">Newest</button>
+      <button class="sort-btn" data-sort="popular">Popular</button>
+    </div>
+  </div>
+  <div id="feed" class="feed" role="list"></div>
+  <div id="emptyState" class="empty-state hidden">
+    <div class="empty-icon">💬</div>
+    <p>Nothing here yet — be the first to post in this category!</p>
+  </div>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p><span>GprinceDev RealTalk</span> &middot; Be kind. Be real. Stay anonymous.</p>
+  </div>
+</footer>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* =====================================================
+   CONFIG
+===================================================== */
+const STORAGE_KEY = 'realtalk_v3';
+const NAME_KEY    = 'realtalk_alias';
+
+const CATEGORIES = {
+  happy:      {emoji:'🎉',label:'Happy',      initials:'HP'},
+  sad:        {emoji:'😔',label:'Sad',        initials:'SD'},
+  angry:      {emoji:'😡',label:'Angry',      initials:'ANG'},
+  love:       {emoji:'💖',label:'Love',       initials:'LV'},
+  naughty:    {emoji:'🔥',label:'Naughty',    initials:'NTY'},
+  confession: {emoji:'🤫',label:'Confession', initials:'CNF'},
+  rant:       {emoji:'💢',label:'Rant',       initials:'RNT'},
+  advice:     {emoji:'💡',label:'Advice',     initials:'ADV'},
+  gratitude:  {emoji:'🙏',label:'Gratitude',  initials:'GRT'},
+  random:     {emoji:'🎲',label:'Random',     initials:'RND'},
+};
+
+const PROMPTS = [
+  "What's something on your mind today?",
+  "What's a secret you've never said out loud?",
+  "What are you quietly proud of this week?",
+  "What would you do if nobody was watching?",
+  "What's the most honest thing you can say right now?",
+  "What's weighing on you that no one knows about?",
+  "What made you feel something real recently?",
+  "What do you need to hear right now?",
+  "What's a thought you'd only share anonymously?",
+  "What's something you're afraid to admit out loud?",
+  "What would you tell your past self right now?",
+  "What's a small win you haven't celebrated yet?",
+  "What are you looking forward to, even if it's tiny?",
+  "What's something you're grateful for but never say?",
+];
+
+const SEED = [
+  {id:'s1',cat:'confession',alias:'SilentNova',   timestamp:Date.now()-5400000,
+   text:"I pretended to have plans this weekend just so I could stay home alone and watch movies. I don't regret it at all.",
+   reactions:{relate:54,support:22,fire:31},reactedBy:[]},
+  {id:'s2',cat:'naughty',alias:'CrimsonEcho',     timestamp:Date.now()-10800000,
+   text:"I've been flirting with my coworker for three months and neither of us has said anything. The tension is absolutely unreal.",
+   reactions:{relate:88,support:14,fire:67},reactedBy:[]},
+  {id:'s3',cat:'rant',alias:'',                   timestamp:Date.now()-21600000,
+   text:"If one more person tells me to 'just be positive' I will lose my mind. Sometimes things are just bad and that's real.",
+   reactions:{relate:103,support:41,fire:29},reactedBy:[]},
+  {id:'s4',cat:'gratitude',alias:'VelvetWisp',    timestamp:Date.now()-86400000,
+   text:"My neighbor left soup outside my door when I was sick and didn't even tell me it was them. Humans can be so unexpectedly good.",
+   reactions:{relate:76,support:58,fire:44},reactedBy:[]},
+  {id:'s5',cat:'advice',alias:'LunarSage',        timestamp:Date.now()-129600000,
+   text:"Stop waiting until you 'feel ready'. You will never feel ready. Do the thing scared. That's where growth actually lives.",
+   reactions:{relate:91,support:63,fire:55},reactedBy:[]},
+  {id:'s6',cat:'sad',alias:'',                    timestamp:Date.now()-172800000,
+   text:"Sometimes I feel like I'm disappearing slowly and nobody around me notices or asks if I'm okay.",
+   reactions:{relate:129,support:97,fire:11},reactedBy:[]},
+  {id:'s7',cat:'love',alias:'GhostFlare',         timestamp:Date.now()-216000000,
+   text:"I wrote a letter to someone I love and never sent it. Maybe that's okay. Maybe the writing was the point.",
+   reactions:{relate:48,support:33,fire:19},reactedBy:[]},
+  {id:'s8',cat:'happy',alias:'IronPrism',         timestamp:Date.now()-259200000,
+   text:"I've been telling myself 'I'll start Monday' for six Mondays. Today is Tuesday and I'm starting anyway. It counts.",
+   reactions:{relate:72,support:28,fire:36},reactedBy:[]},
+];
+
+/* =====================================================
+   STATE
+===================================================== */
+let posts        = [];
+let activeSort   = 'newest';
+let activeFilter = 'all';
+let selectedCat  = 'happy';
+
+/* =====================================================
+   DOM REFS
+===================================================== */
+const feedEl         = document.getElementById('feed');
+const emptyEl        = document.getElementById('emptyState');
+const inputEl        = document.getElementById('postInput');
+const postBtn        = document.getElementById('postBtn');
+const charEl         = document.getElementById('charCount');
+const promptEl       = document.getElementById('promptText');
+const toastEl        = document.getElementById('toast');
+const catPillsEl     = document.getElementById('catPills');
+const filterBarEl    = document.getElementById('filterBar');
+const sortBtns       = document.querySelectorAll('.sort-btn');
+const feedLabel      = document.getElementById('feedLabel');
+const nameInput      = document.getElementById('nameInput');
+const btnGenName     = document.getElementById('btnGenName');
+const nameSavedBadge = document.getElementById('nameSavedBadge');
+
+/* =====================================================
+   STORAGE
+===================================================== */
+function load(){ try{posts=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]')}catch(e){posts=[]} }
+function save(){ try{localStorage.setItem(STORAGE_KEY,JSON.stringify(posts))}catch(e){showToast('Storage full.')} }
+function saveName(n){ try{localStorage.setItem(NAME_KEY,n)}catch(e){} }
+function loadName(){ try{return localStorage.getItem(NAME_KEY)||''}catch(e){return ''} }
+
+/* =====================================================
+   HELPERS
+===================================================== */
+function uid(){ return Date.now()+'_'+Math.random().toString(36).slice(2,6) }
+
+function ago(ts){
+  const d=Date.now()-ts,m=Math.floor(d/60000),h=Math.floor(d/3600000),dy=Math.floor(d/86400000);
+  if(m<1)  return 'just now';
+  if(m<60) return m+'m ago';
+  if(h<24) return h+'h ago';
+  if(dy<7) return dy+'d ago';
+  return new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+
+function esc(s){ const d=document.createElement('div');d.textContent=s;return d.innerHTML }
+
+let _tt;
+function showToast(msg){
+  toastEl.textContent=msg; toastEl.classList.add('show');
+  clearTimeout(_tt); _tt=setTimeout(()=>toastEl.classList.remove('show'),2300);
+}
+
+/* =====================================================
+   NAME GENERATOR
+===================================================== */
+const ADJS  = ['Silent','Shadow','Ghost','Neon','Cosmic','Velvet','Hollow','Crimson',
+                'Mystic','Rogue','Lunar','Storm','Frozen','Crystal','Wild','Blazing',
+                'Serene','Iron','Secret','Broken','Vivid','Lone','Azure','Amber',
+                'Silver','Obsidian','Scarlet','Golden','Electric','Midnight'];
+const NOUNS = ['Wolf','Phoenix','Echo','Cipher','Spark','Drift','Nova','Specter',
+               'Viper','Raven','Comet','Pulse','Wraith','Ember','Tide','Flux',
+               'Mirage','Blaze','Frost','Tempest','Wisp','Oracle','Arrow','Prism',
+               'Crow','Sage','Shade','Flare','Bloom','Drift'];
+
+function generateName(){
+  return ADJS[Math.floor(Math.random()*ADJS.length)]+NOUNS[Math.floor(Math.random()*NOUNS.length)];
+}
+
+function getInitials(alias){
+  if(!alias) return '?';
+  const parts = alias.replace(/([a-z])([A-Z])/g,'$1 $2').split(/\s+/);
+  if(parts.length>=2) return (parts[0][0]+parts[1][0]).toUpperCase();
+  return alias.slice(0,2).toUpperCase();
+}
+
+/* name autosave */
+let _nst;
+function flashSaved(){ nameSavedBadge.classList.add('show'); setTimeout(()=>nameSavedBadge.classList.remove('show'),1800) }
+nameInput.addEventListener('input',()=>{ clearTimeout(_nst); _nst=setTimeout(()=>{ saveName(nameInput.value.trim()); flashSaved() },800) });
+btnGenName.addEventListener('click',()=>{ const n=generateName(); nameInput.value=n; saveName(n); flashSaved(); nameInput.focus() });
+
+/* =====================================================
+   RENDER
+===================================================== */
+function getFiltered(){
+  let list = activeFilter==='all' ? [...posts] : posts.filter(p=>p.cat===activeFilter);
+  return list.sort((a,b)=>{
+    if(activeSort==='popular'){
+      const sa=(a.reactions.relate||0)+(a.reactions.support||0)+(a.reactions.fire||0);
+      const sb=(b.reactions.relate||0)+(b.reactions.support||0)+(b.reactions.fire||0);
+      return sb-sa||b.timestamp-a.timestamp;
+    }
+    return b.timestamp-a.timestamp;
+  });
+}
+
+function renderFeed(){
+  feedEl.innerHTML='';
+  const list=getFiltered();
+  const cat=CATEGORIES[activeFilter];
+  feedLabel.textContent = cat ? cat.emoji+' '+cat.label+' Posts' : 'Community Feed';
+  if(!list.length){ emptyEl.classList.remove('hidden'); return }
+  emptyEl.classList.add('hidden');
+  list.forEach((p,i)=>{ const c=buildCard(p); c.style.animationDelay=(i*.04)+'s'; feedEl.appendChild(c) });
+}
+
+function buildCard(p){
+  const cat=CATEGORIES[p.cat]||CATEGORIES.random;
+  const rc=p.reactions.relate||0, sc=p.reactions.support||0, fc=p.reactions.fire||0;
+  const rd=p.reactedBy.includes('relate'), sd=p.reactedBy.includes('support'), fd=p.reactedBy.includes('fire');
+
+  const art=document.createElement('article');
+  art.className='post-card'; art.dataset.cat=p.cat; art.dataset.id=p.id; art.setAttribute('role','listitem');
+
+  art.innerHTML=`
+    <div class="card-top">
+      <div class="card-meta">
+        <div class="avatar" data-cat="${p.cat}">${getInitials(p.alias)}</div>
+        <span class="${p.alias?'card-alias':'card-alias-anon'}">${esc(p.alias||'Anonymous')}</span>
+        <span class="post-tag" data-cat="${p.cat}">${cat.emoji} ${cat.label}</span>
+      </div>
+      <time class="card-time" datetime="${new Date(p.timestamp).toISOString()}">${ago(p.timestamp)}</time>
+    </div>
+    <p class="card-body">${esc(p.text)}</p>
+    <div class="card-reactions">
+      <button class="rxn-btn ${rd?'active-relate':''}" data-rxn="relate" aria-pressed="${rd}">
+        <span class="rxn-icon">❤️</span><span>Relate</span><span class="rxn-count">${rc}</span>
+      </button>
+      <button class="rxn-btn ${sd?'active-support':''}" data-rxn="support" aria-pressed="${sd}">
+        <span class="rxn-icon">🤝</span><span>Support</span><span class="rxn-count">${sc}</span>
+      </button>
+      <button class="rxn-btn ${fd?'active-fire':''}" data-rxn="fire" aria-pressed="${fd}">
+        <span class="rxn-icon">🔥</span><span>Fire</span><span class="rxn-count">${fc}</span>
+      </button>
+    </div>`;
+
+  art.querySelectorAll('.rxn-btn').forEach(btn=>btn.addEventListener('click',()=>react(p.id,btn.dataset.rxn,btn)));
+  return art;
+}
+
+/* =====================================================
+   POST
+===================================================== */
+function createPost(){
+  const text=inputEl.value.trim();
+  if(!text){ showToast('Write something first ✏️'); inputEl.focus(); return }
+  posts.unshift({ id:uid(), text, cat:selectedCat, alias:nameInput.value.trim()||'',
+    timestamp:Date.now(), reactions:{relate:0,support:0,fire:0}, reactedBy:[] });
+  save();
+  inputEl.value=''; charEl.textContent='0 / 300'; charEl.className='char-count';
+  renderFeed();
+  showToast('Posted anonymously 🎉');
+  feedEl.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* =====================================================
+   REACT
+===================================================== */
+function react(postId,type,btn){
+  const p=posts.find(x=>x.id===postId); if(!p) return;
+  const already=p.reactedBy.includes(type);
+  if(already){ p.reactions[type]=Math.max(0,p.reactions[type]-1); p.reactedBy=p.reactedBy.filter(r=>r!==type) }
+  else { p.reactions[type]++; p.reactedBy.push(type) }
+  save();
+  const ce=btn.querySelector('.rxn-count'); ce.textContent=p.reactions[type];
+  btn.classList.toggle('active-'+type,!already);
+  btn.setAttribute('aria-pressed',String(!already));
+  ce.classList.remove('bump'); void ce.offsetWidth; ce.classList.add('bump');
+  if(activeSort==='popular') setTimeout(renderFeed,700);
+}
+
+/* =====================================================
+   EVENTS
+===================================================== */
+inputEl.addEventListener('input',()=>{
+  const n=inputEl.value.length; charEl.textContent=n+' / 300';
+  charEl.className='char-count'+(n>=280?' danger':n>=240?' warn':'');
+});
+postBtn.addEventListener('click',createPost);
+inputEl.addEventListener('keydown',e=>{ if((e.ctrlKey||e.metaKey)&&e.key==='Enter') createPost() });
+
+catPillsEl.addEventListener('click',e=>{
+  const pill=e.target.closest('.cat-pill'); if(!pill) return;
+  document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('selected'));
+  pill.classList.add('selected'); selectedCat=pill.dataset.cat;
+});
+
+filterBarEl.addEventListener('click',e=>{
+  const pill=e.target.closest('.filter-pill'); if(!pill) return;
+  document.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active'));
+  pill.classList.add('active'); activeFilter=pill.dataset.filter; renderFeed();
+});
+
+sortBtns.forEach(btn=>btn.addEventListener('click',()=>{
+  activeSort=btn.dataset.sort;
+  sortBtns.forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderFeed();
+}));
+
+/* =====================================================
+   INIT
+===================================================== */
+(function init(){
+  const doy=Math.floor((Date.now()-new Date(new Date().getFullYear(),0,0))/86400000);
+  promptEl.textContent=PROMPTS[doy%PROMPTS.length];
+  load(); if(!posts.length){ posts=SEED; save() }
+  const saved=loadName(); if(saved) nameInput.value=saved;
+  renderFeed(); inputEl.focus();
+})();
+</script>
+</body>
+</html>
